@@ -2,11 +2,34 @@ from corruptor import Corruptor
 import os
 
 class Interface:
-    def __init__(self):
-        self.rom_path = "smb3.nes"
-        self.export_path = "smb3_corrupt.nes"
-        self.corruptor = Corruptor(self.rom_path, self.export_path, 0.00005)
+    def __init__(self, rom_dir, export_dir):
+        self.rom_dir = rom_dir
+        self.export_dir = export_dir
+        self.initial_setup()
         self.main_menu()
+
+    def initial_setup(self):
+        input("""
+
+    Welcome to the Haggleforth™ Rom Corruptor!
+        
+The Haggleforth™ Rom corruptor is an incremental corruptor, meaning it only corrupts
+a small amount at a time, storing the corruption in patches that can be toggled on and off.
+
+Press Enter to continue...
+""")
+
+        for root, dirs, files in os.walk(self.rom_dir):
+            for i, filename in enumerate(files):
+                print(f"{i+1}. {filename}")
+
+            rom_index = int(input("Give the index of the rom you'd like to use: "))
+            self.rom_path = os.path.join(root, files[rom_index-1])
+
+        self.export_path = os.path.join(self.export_dir, input("Give a name for the new corruption: "))
+        self.run_command = input("Give the command for running the rom: ")
+
+        self.corruptor = Corruptor(self.rom_path, self.export_path, 0.00005)
 
     def launch_emulator(self):
         self.corruptor.export_rom()
@@ -28,23 +51,21 @@ class Interface:
             self.corruptor.patches[patch - 1].toggle()
 
 
-    def print_welcome_message(self):
-        print("""\tWelcome to the Haggleforth™ Rom Corruptor!
-The Haggleforth™ Rom corruptor is an incremental corruptor, meaning it only corrupts 
-a small amount at a time, storing the corruption in patches that can be toggled on and off.
-
-If the game isn't sufficiently corrupted, try generating a new patch.
+    def print_directions(self):
+        print("""If the game isn't sufficiently corrupted, try generating a new patch.
 
 If a patch is unsuccessful, try regenerating the current patch.
 
 If the game is broken even after regenerating the current patch, try toggling patches.
+
+If all else fails, start a new session
 
 
 """)
         input("A corruption patch will now be generated and ran. (Press Enter to continue): ")
 
     def main_menu(self):
-        self.print_welcome_message()
+        self.print_directions()
         self.corruptor.create_patch(False)
         self.launch_emulator()
         while True:
@@ -53,7 +74,9 @@ If the game is broken even after regenerating the current patch, try toggling pa
 2: Regenerate current patch and run
 3: Generate new patch and run
 4: Toggle patches and run
-5: New session
+5: Change corruption ammount
+6: New session
+7: Run initial setup again
 
 Choice: '''))
 
@@ -68,12 +91,20 @@ Choice: '''))
                 self.toggle_patches()
 
             elif choice == 5:
+                percent = float(input(f"What percent of bytes should be corrupted? (Current is {self.corruptor.corrupt_lvl * 100}): ")) / 100
+                self.corruptor.corrupt_lvl = percent
+                continue
+
+            elif choice == 6:
                 self.corruptor.patches = []
+
+            elif choice == 7:
+                self.initial_setup()
 
             self.launch_emulator()
 
 
-interface = Interface()
+interface = Interface('./roms/', './corrupted_roms')
 
 
         
