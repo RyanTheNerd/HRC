@@ -1,10 +1,14 @@
 from corruptor import Corruptor
 import os
 
+ROM_DIR = 'roms'
+EXPORT_DIR = 'corrupted_roms'
+
 class Interface:
-    def __init__(self, rom_dir, export_dir):
-        self.rom_dir = rom_dir
-        self.export_dir = export_dir
+    def __init__(self, rom_path, export_path, run_command):
+        self.rom_path = rom_path
+        self.export_path = export_path
+        self.run_command = run_command
         self.initial_setup()
         self.main_menu()
 
@@ -19,21 +23,25 @@ a small amount at a time, storing the corruption in patches that can be toggled 
 Press Enter to continue...
 """)
 
-        for root, dirs, files in os.walk(self.rom_dir):
-            for i, filename in enumerate(files):
-                print(f"{i+1}. {filename}")
+        if self.rom_path == None:
+            for root, dirs, files in os.walk(ROM_DIR):
+                for i, filename in enumerate(files):
+                    print(f"{i+1}. {filename}")
 
-            rom_index = int(input("Give the index of the rom you'd like to use: "))
-            self.rom_path = os.path.join(root, files[rom_index-1])
+                rom_index = int(input("Give the index of the rom you'd like to use: "))
+                self.rom_path = os.path.join(root, files[rom_index-1])
 
-        self.export_path = os.path.join(self.export_dir, input("Give a name for the new corruption: "))
-        self.run_command = input("Give the command for running the rom: ")
+        if self.export_path == None:
+            self.export_path = os.path.join(EXPORT_DIR, input("Give a name for the new corruption: "))
+
+        if(self.run_command == None):
+            self.run_command = input("Give the command for running the rom: ")
 
         self.corruptor = Corruptor(self.rom_path, self.export_path, 0.00005)
 
     def launch_emulator(self):
         self.corruptor.export_rom()
-        os.system(f"fceux {self.export_path}")
+        os.system(f'{self.run_command} "{self.export_path}"')
 
     def toggle_patches(self):
         print("Patches:")
@@ -102,10 +110,3 @@ Choice: '''))
                 self.initial_setup()
 
             self.launch_emulator()
-
-
-interface = Interface('./roms/', './corrupted_roms')
-
-
-        
-
